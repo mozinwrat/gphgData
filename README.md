@@ -43,6 +43,16 @@ ollama pull gemma3:27b
 
 `gemma3:27b` gives stronger extraction quality on Apple Silicon with enough memory. `gemma3:12b` is a faster fallback.
 
+## Local Model Testing Notes
+
+The enrichment workflow was tested with Gemma and DeepSeek R1 through Ollama on an Apple Silicon machine with 64 GB RAM.
+
+- `gemma3:27b` is the current recommended local model for full-row enrichment. It produced the best balance of extraction quality, JSON compliance, and practical runtime in the 2001 tests.
+- `gemma3:12b` is a useful fallback when memory or latency matters more than maximum extraction quality.
+- `deepseek-r1:32b` was tested but is not currently recommended for this workflow. It was memory constrained on the test machine and showed higher extraction risk, including hallucinated structured values such as `SIZE_NEW: 42 mm` when the source text did not support that case size.
+
+Because the goal is normalized factual extraction, prefer the model that is conservative with source evidence over the model that gives the most fluent answer.
+
 ## SuperScraper.py
 
 The scraper discovers GPHG archive pages, follows participant, pre-selected, nominated, and winner links, and merges duplicate watch URLs using the promotion order `P < S < N < W`.
