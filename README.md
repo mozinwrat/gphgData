@@ -5,6 +5,7 @@ This repo extracts historic and current watch data from https://www.gphg.org/en 
 ## Tools
 
 - **SuperScraper.py** scrapes archive years and optional current-year participants pages, then writes pipe-delimited raw data.
+- **SuperScraperMT.py** is the multithreaded scraper. It keeps the same output contract as `SuperScraper.py`, but fetches independent watch detail pages in parallel.
 - **SuperEnrich.py** enriches raw rows with local Ollama models by default, with optional Gemini and DeepL workflows.
 
 ## Quick Start
@@ -13,8 +14,11 @@ This repo extracts historic and current watch data from https://www.gphg.org/en 
 # Scrape all archive years
 python SuperScraper.py -e
 
+# Faster full scrape using the multithreaded scraper
+python SuperScraperMT.py -e --workers 4 --rate-limit 0.05
+
 # Scrape one archive year
-python SuperScraper.py -y 2001 -e
+python SuperScraperMT.py -y 2001 -e --workers 4 --rate-limit 0.05
 
 # Enrich older French rows with Ollama auto mode
 env OLLAMA_MODEL=gemma3:27b python SuperEnrich.py \
@@ -111,6 +115,116 @@ python SuperScraper.py -e -P --participants-year 2026
 python SuperScraper.py -e -P --participants-url "https://gphg.org/en/gphg-2026/competing-watches"
 ```
 
+## SuperScraperMT.py
+
+`SuperScraperMT.py` is the multithreaded version of the scraper. It is intended for normal full-history extraction because the slowest part of scraping is fetching each independent watch detail page.
+
+The script keeps archive discovery, year-page discovery, list-page discovery, output headers, `Language`, duplicate merge, `PrizeType` promotion, and atomic output writes compatible with `SuperScraper.py`.
+
+### Why It Is Faster
+
+GPHG list pages are small and sequentially define the scrape plan. The expensive work is fetching hundreds of individual watch detail pages per year. Those pages are independent, so `SuperScraperMT.py` uses a bounded `ThreadPoolExecutor` for detail pages only.
+
+It is faster because it overlaps network wait time:
+
+- each worker has its own thread-local `requests.Session`
+- detail pages are fetched in parallel
+- results are sorted back into the original list order before writing
+- duplicate merging still happens after all rows are collected
+- a shared cache prevents refetching the same detail URL when a watch appears as participant, nominee, and winner
+
+Use a conservative worker count. The tested default is `6`, but `4` with a small rate limit is a polite and stable setting:
+
+```bash
+python SuperScraperMT.py -e --workers 4 --rate-limit 0.05
+```
+
+Use `--workers 1` if you want the multithreaded script to behave like a sequential detail-page fetcher for debugging.
+
+### CLI
+
+```text
+usage: SuperScraperMT.py [-h] [-y YEAR] [-e] [-d] [-P]
+                         [--participants-year PARTICIPANTS_YEAR]
+                         [--participants-url PARTICIPANTS_URL]
+                         [--update-header]
+                         [--timeout TIMEOUT]
+                         [--retries RETRIES]
+                         [--workers WORKERS]
+                         [--rate-limit RATE_LIMIT]
+
+options:
+  -y, --year                 Scrape a single archive year. If omitted, scrape all archive years found.
+  -e, --export               Write the pipe-delimited output file.
+  -d, --debug                Verbose logging.
+  -P                         Include the current-year participants page.
+  --participants-year        Year for the participants page. Defaults to the configured current participant year.
+  --participants-url         Explicit participants URL override.
+  --update-header            Add newly discovered spec columns to gphg_header_master.json.
+  --timeout                  HTTP timeout in seconds.
+  --retries                  HTTP retry count.
+  --workers                  Parallel detail-page workers. Defaults to 6.
+  --rate-limit               Optional seconds to sleep before each detail-page request per worker.
+```
+
+### Examples
+
+```bash
+# Full archive scrape with polite parallelism
+python SuperScraperMT.py -e --workers 4 --rate-limit 0.05
+
+# Single year
+python SuperScraperMT.py -y 2025 -e --workers 4 --rate-limit 0.05
+
+# Current-year participants page
+python SuperScraperMT.py -e -P --participants-year 2026 --workers 4 --rate-limit 0.05
+```
+
+### Regression Test Results
+
+`SuperScraperMT.py` was regression-tested against `SuperScraper.py` using full archive extraction for 2001-2025. Both runs used the same `gphg_header_master.json` and wrote isolated outputs.
+
+Preserved comparison files from the test run:
+
+```text
+regression_outputs/v80_vs_v81_full_2001_2025/GPHG_Prize_v80_full_2001_2025.txt
+regression_outputs/v80_vs_v81_full_2001_2025/GPHG_Prize_v81_full_2001_2025.txt
+```
+
+Coverage matched:
+
+```text
+Data rows: 5652 vs 5652
+Lines including header: 5653 vs 5653
+Columns: 23 vs 23
+Headers: identical
+Watch key set: identical
+Language distribution: en=4183, fr=1469 in both
+PrizeType distribution: P=4922, N=398, W=332 in both
+```
+
+Timing from the same regression run:
+
+```text
+SuperScraperMT.py: about 16m 05s
+SuperScraper.py:   about 34m 17s
+```
+
+The multithreaded run was a little over twice as fast because it overlapped network-bound detail-page requests.
+
+Content differences were limited to cleanup of bad page-title values:
+
+```text
+Rows with field differences: 128
+FUNCTIONS differences: 115
+CERTIFICATION differences: 13
+Bad values ending in "| GPHG":
+  SuperScraper.py:   128
+  SuperScraperMT.py: 0
+```
+
+The removed values looked like `Brand, Model | GPHG`, for example `BVLGARI, Lvcea Notte Di Luce | GPHG`. These are page titles, not real watch specifications. `SuperScraperMT.py` filters them out instead of writing them into `FUNCTIONS` or `CERTIFICATION`.
+
 ## SuperEnrich.py
 
 The enricher reads scraper output, adds audit columns, and populates normalized enrichment columns. It can translate older French descriptions and can also run extraction-only for English rows.
@@ -203,7 +317,7 @@ env OLLAMA_MODEL=gemma3:12b python SuperEnrich.py \
 
 ## Workflow
 
-1. Scrape with `SuperScraper.py`.
+1. Scrape with `SuperScraperMT.py` for faster full-history extraction, or `SuperScraper.py` for the sequential baseline.
 2. Enrich with `SuperEnrich.py --task auto`.
 3. Review `<output>.fail.csv` if `--log-failures` was enabled.
 4. Rerun targeted rows with `--year`, `--brand-contains`, and `--model-contains` when a row needs focused cleanup.
