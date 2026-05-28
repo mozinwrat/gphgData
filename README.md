@@ -219,6 +219,11 @@ env OLLAMA_MODEL=gemma3:12b python SuperEnrich.py \
 ## Conventions
 
 - Output delimiter is `|`.
-- `PrizeType` promotion is `P < S < N < W`.
+- `PrizeType` records the strongest GPHG status found for a watch:
+  - `P` = participant or competing watch
+  - `S` = pre-selected watch
+  - `N` = nominated watch
+  - `W` = winning watch
+- When the same watch appears in multiple sections, `PrizeType` is promoted in the order `P < S < N < W`.
 - `Reference` comes from the source site when available. `Reference_NEW` can be enriched from the model text and technical sheet details.
 - Technical sheet sections such as `Fiche Technique` are prioritized for reference, calibre, indications, frequency, power reserve, water resistance, case, dial, strap, and clasp details.
