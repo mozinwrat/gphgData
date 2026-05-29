@@ -88,7 +88,7 @@ Year | Language | Brand | Model | Reference | <master spec columns> | PrizeType 
 
 The spec columns come from `gphg_header_master.json`. That committed static header keeps column order stable across sequential and multithreaded runs. The file is not regenerated during a normal scrape.
 
-The current master header contains these 18 source specification fields:
+The current master header contains these 19 source specification fields:
 
 ```text
 BRACELET STRAP
@@ -107,11 +107,14 @@ PRICE EXCL. VAT
 PRICE INCL. VAT
 REFERENCE
 SIZE
+SUSTAINABILITY
 THICKNESS
 WATER RESISTANCE
 ```
 
 New columns discovered during scraping are logged as new source fields. They are only added to the master header when `--update-header` is used, and the updated `gphg_header_master.json` should be reviewed and committed with the scraper change.
+
+Some source labels are canonicalized before writing output: `MATERIAL` is rolled into `CASE MATERIAL`, and `REFERENCE` plus truncated labels such as `REFE`, `REFER`, and `REFEREN` are rolled into the fixed `Reference` output column.
 
 ### CLI
 

@@ -46,6 +46,7 @@ KEY_ALIASES = {
     r"^PRICE\s+EXCL\.?\s*TAX$"       : "PRICE EXCL. VAT",
     r"^CASE\s+MATERIALS?$"           : "CASE MATERIAL",
     r"^WATER\s+RESISTANCE$"          : "WATER RESISTANCE",
+    r"^REF(?:E|ER|EREN)?$"           : "REFERENCE",
     # …extend as you discover more variants…
 }
 ALIAS_MAP = [(re.compile(pat, re.I), name) for pat, name in KEY_ALIASES.items()]
