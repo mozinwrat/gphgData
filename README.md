@@ -7,6 +7,17 @@ This repo extracts historic and current watch data from https://www.gphg.org/en 
 - **SuperScraper.py** scrapes archive years and optional current-year participants pages, then writes pipe-delimited raw data.
 - **SuperScraperMT.py** is the multithreaded scraper. It keeps the same output contract as `SuperScraper.py`, but fetches independent watch detail pages in parallel.
 - **SuperEnrich.py** enriches raw rows with local Ollama models by default, with optional Gemini and DeepL workflows.
+- **gphg_header_master.json** defines the stable scraper spec-column contract used by both scrapers.
+
+## Repository Contents
+
+- `SuperScraper.py`: sequential scraper and compatibility baseline.
+- `SuperScraperMT.py`: multithreaded scraper for normal full-history extraction.
+- `SuperEnrich.py`: enrichment and translation pipeline.
+- `gphg_header_master.json`: committed master list of raw specification fields.
+- `README.md`: usage notes, conventions, and test results.
+
+Generated scrape outputs, enrichment outputs, logs, failure CSVs, regression artifacts, and exploratory versioned scripts are intentionally not tracked in this repo unless they are promoted as release artifacts.
 
 ## Quick Start
 
@@ -75,7 +86,32 @@ Year | Language | Brand | Model | Reference | <master spec columns> | PrizeType 
 - `en` for 2008 and later
 - `unknown` for years outside the known mapping
 
-The spec columns come from `gphg_header_master.json`. That static header keeps column order stable across runs. New columns discovered during scraping are logged; they are only added to the master header when `--update-header` is used.
+The spec columns come from `gphg_header_master.json`. That committed static header keeps column order stable across sequential and multithreaded runs. The file is not regenerated during a normal scrape.
+
+The current master header contains these 18 source specification fields:
+
+```text
+BRACELET STRAP
+BUCKLE
+CASE MATERIAL
+CERTIFICATION
+COLLECTION
+DESCRIPTION
+DIAL FINISH
+FUNCTIONS
+LAUNCH DATE
+MATERIAL
+MOVEMENT
+NUMBER OF CARATS
+PRICE EXCL. VAT
+PRICE INCL. VAT
+REFERENCE
+SIZE
+THICKNESS
+WATER RESISTANCE
+```
+
+New columns discovered during scraping are logged as new source fields. They are only added to the master header when `--update-header` is used, and the updated `gphg_header_master.json` should be reviewed and committed with the scraper change.
 
 ### CLI
 

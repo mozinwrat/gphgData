@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+
+# Generated scraper and enrichment outputs
+GPHG_Prize*.txt
+GPHG_Prize*.xlsx
+*_enriched*.txt
+*_enriched*.csv
+*.fail.csv
+
+# Runtime logs and local regression artifacts
+logs/
+regression_outputs/
+
+# Local environment files
+.env
+.venv/
+venv/
