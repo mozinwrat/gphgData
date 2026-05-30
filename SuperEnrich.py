@@ -47,7 +47,7 @@ PROMPT_TMPL = textwrap.dedent(
     - Preserve all alternatives listed in a structured specification section. If the source says "ou" / "or", keep every option and separate multiple extracted values with "; " where useful.
     - Convert the watch data into valid JSON containing exactly the keys listed under DESIRED_KEYS. If a value is missing, output an empty string. Never invent data.
     - Every textual value in the JSON response must be in English, even when extracted from French source specifications.
-    - Do not leave French words or phrases in fields such as CASE MATERIAL, BRACELET STRAP, BUCKLE, FUNCTIONS, MOVEMENT, DIAL FINISH, CERTIFICATION, COLLECTION, or DESCRIPTION.
+    - Do not leave French words or phrases in fields such as CASE MATERIAL, BRACELET STRAP, BUCKLE, FUNCTIONS, MOVEMENT, DIAL FINISH, CERTIFICATION, SUSTAINABILITY, COLLECTION, or DESCRIPTION.
     - Preserve only brand names, model names, proper collection names, reference numbers, calibre names/numbers, units, and currency symbols exactly when appropriate.
     - Translate common watch terms, for example: or=gold, or gris=white gold, or rose=rose gold, acier=steel, platine=platinum, cuir=leather, boucle deployante=folding/deployant clasp, remontage automatique=automatic winding, remontage manuel=manual winding, heures=hours, minutes=minutes, secondes=seconds.
     - If a reference number is found within the translated DESCRIPTION or COLLECTION, extract it and assign it to the 'Reference' field.
@@ -63,6 +63,9 @@ PROMPT_TMPL = textwrap.dedent(
     - THICKNESS should be in mm and is measured from the front glass to the case back.
     - CASE MATERIAL is the metal or material used for the watch case.
     - CASE MATERIAL must preserve all listed case material variants, for example "or jaune 3N ou gris" should become "3N yellow gold or white/grey gold".
+    - SUSTAINABILITY describes sustainable, recycled, traceable, responsible, certified, or ethically sourced materials/processes when the source has a dedicated sustainability field.
+    - SUSTAINABILITY must not be inferred from CASE MATERIAL alone. If the source only says "Steel", "Titanium", "Gold", or another material without a dedicated sustainability/recycled/responsible-sourcing claim, leave SUSTAINABILITY empty.
+    - If the source SUSTAINABILITY field contains material text because GPHG provided it there, translate and preserve that text in SUSTAINABILITY rather than moving it to CASE MATERIAL.
     - BRACELET STRAP should preserve material and construction details, for example alligator species, padded/bombé construction, and hand stitching.
     - BUCKLE must distinguish clasp types accurately: "boucle à ardillon" means pin/tang buckle, not deployant clasp; "boucle déployante" means deployant/folding clasp.
     - COLLECTION must include the full processed collection text in English.

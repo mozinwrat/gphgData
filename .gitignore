@@ -10,6 +10,7 @@ GPHG_Prize*.xlsx
 
 # Runtime logs and local regression artifacts
 logs/
+SuperEnrich_*.log
 regression_outputs/
 
 # Local environment files

@@ -290,6 +290,8 @@ The output keeps all original input columns and adds:
 
 `DESCRIPTION_NEW` is English in translate mode. In extract-only mode, English source text is preserved and normalized into the `_NEW` fields.
 
+When raw scraper output includes `SUSTAINABILITY`, the enricher also emits `SUSTAINABILITY_NEW`. This field is treated as a dedicated sustainability/materials disclosure from GPHG and is not inferred from `CASE MATERIAL` alone.
+
 ### CLI
 
 ```text
